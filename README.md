@@ -1,3 +1,3 @@
 # HesapTakipProgram-
-Programda polymorphisim ve abstract kullanıldı
+Programda polymorphisim ve abstract kullanıldı ABAP Object
 
