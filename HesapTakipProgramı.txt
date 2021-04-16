@@ -1,0 +1,198 @@
+* polymorphism
+*KADİR DEĞER
+*kadirdegr1997@gmail.com
+*--------------------
+
+*-------------------------
+* Hesap Classı Tanımlama
+*-------------------------
+CLASS hesap DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING
+                           VALUE(i_hesap_sahibi) TYPE string
+                           VALUE(i_miktar)       TYPE f,
+
+
+      paracekmek ABSTRACT
+        IMPORTING i_para                TYPE f
+                  i_ihbar_suresı_ıcınde TYPE string
+        EXPORTING e_para                TYPE f,
+
+      yatırılanpara ABSTRACT
+        IMPORTING i_para TYPE f
+        EXPORTING e_para TYPE f,
+
+
+      hesap_sahibini_getir
+        RETURNING VALUE(r_hesap_sahibi) TYPE string.
+
+  PROTECTED SECTION.
+    DATA: hesap_sahibi TYPE string,
+          bakiye       TYPE f.
+
+ENDCLASS.
+
+*-----------------------------------
+* Cari Classı Tanımlama
+*------------------------------------
+CLASS cari DEFINITION INHERITING FROM hesap.
+  PUBLIC SECTION.
+    METHODS: paracekmek REDEFINITION,
+            yatırılanpara REDEFINITION.
+ENDCLASS.
+
+
+*--------------------------------------
+*Bildirme Classı tanımlama
+*--------------------------------------
+CLASS bildirmek DEFINITION INHERITING FROM hesap.
+  PUBLIC SECTION.
+    METHODS: paracekmek REDEFINITION,
+      yatırılanpara REDEFINITION.
+
+  PROTECTED SECTION.
+    DATA bildiri_sureci_icinde TYPE c.
+ENDCLASS.
+*---------------------------------------------
+*hesap classı uygulama
+*------------------------------
+CLASS hesap IMPLEMENTATION.
+  METHOD constructor.
+    hesap_sahibi = i_hesap_sahibi.
+    bakiye    =  i_miktar.
+
+  ENDMETHOD.
+
+  METHOD hesap_sahibini_getir.
+    r_hesap_sahibi = hesap_sahibi.
+  ENDMETHOD.
+
+ENDCLASS.
+
+*--------------------------------
+*Cari classı uygulama
+*--------------------------------
+CLASS cari IMPLEMENTATION.
+  METHOD paracekmek.
+    WRITE: / 'Bakiye Açıldı ', bakiye EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+    IF i_para <= bakiye.
+      bakiye = bakiye - i_para.
+      e_para = i_para.
+    ELSE.
+      WRITE / ' Hesabınızdan para çekme işlemi için yeterli paranız yok '.
+
+    ENDIF.
+    WRITE: / ' Bakiye Kapatıldı ', bakiye EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+  ENDMETHOD.
+
+  METHOD yatırılanpara.
+    WRITE : / ' Hesap Açıldı ', bakiye EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+    bakiye = bakiye + i_para.
+    e_para = i_para.
+    WRITE: / ' Hesap Kapatıldı ', bakiye EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+  ENDMETHOD.
+
+ENDCLASS.
+
+*-----------------------------
+*Bildirmek classı uygulama
+*-----------------------------
+CLASS bildirmek IMPLEMENTATION.
+  METHOD paracekmek.
+    DATA: zbakiye TYPE f.
+    IF bildiri_sureci_icinde = 'E'.
+      zbakiye = bakiye * '0.95'.
+    ELSE.
+      zbakiye = bakiye.
+    ENDIF.
+    WRITE: / ' Bakiye Açıldı ', bakiye EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+
+    IF i_para <= zbakiye.
+      bakiye = bakiye - ( i_para + ( bakiye * '0.05' ) ).
+      e_para = i_para.
+      IF i_ihbar_suresı_ıcınde = 'E'.
+
+        WRITE ' - Ceza Uygulanacak '.
+
+      ENDIF.
+
+    ELSE.
+      WRITE / ' Hesabınızdan para çekme işlemi için yeterli paranız yok  '.
+
+    ENDIF.
+    WRITE: / ' Bakiye Kapatıldı ',bakiye EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+  ENDMETHOD.
+
+  METHOD yatirilanpara.
+    WRITE: / ' Bakiye Açıldı ',bakiye EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+    bakiye = bakiye + ( i_para * '1.001' ).
+    e_para = i_para * '1.001'.
+    WRITE : / ' Bakiye Kapatıldı ', bakiye EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+  ENDMETHOD.
+
+ENDCLASS.
+
+
+
+
+
+DATA: o_hesap     TYPE REF TO hesap,
+      hesap_table TYPE TABLE OF REF TO hesap,
+      hesapsahibi      TYPE string,
+      miktar      TYPE  f.
+
+START-OF-SELECTION.
+
+create OBJECT o_hesap
+type
+cari
+EXPORTING
+  i_hesap_sahibi = 'KADİR DEĞER'
+  i_miktar       = 1000.
+APPEND o_hesap to hesap_table.
+
+CREATE OBJECT o_hesap
+type
+bildirmek
+EXPORTING
+  i_hesap_sahibi = 'EMRE CEYHAN'
+  i_miktar       = 2500.
+APPEND o_hesap to hesap_table.
+
+CREATE OBJECT o_hesap
+type
+cari
+EXPORTING
+  i_hesap_sahibi = 'Selçuk Gömi'
+  i_miktar    = 100000000.
+APPEND o_hesap to hesap_table.
+
+CREATE OBJECT o_hesap
+type
+bildirmek
+EXPORTING
+i_hesap_sahibi = 'Büşra Sürdür Can'
+i_miktar = 2500.
+APPEND o_hesap to hesap_table.
+
+Loop at hesap_table INTO o_hesap.
+  hesapsahibi = o_hesap->hesap_sahibini_getir( ).
+  o_hesap->yatirilanpara( EXPORTING i_para = 225 IMPORTING e_para = miktar ).
+  WRITE : / ' Para Yatırma İşlemi ', hesapsahibi, ' Toplamında ', miktar EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+  SKIP.
+
+  o_hesap->paracekmek( EXPORTING i_para = 225 i_ihbar_suresı_ıcınde = 'H' IMPORTING e_para = miktar  ).
+  WRITE: / ' Para Çekme işlemi ', hesapsahibi, ' Toplamında ', miktar EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+  SKIP.
+
+  hesapsahibi = o_hesap->hesap_sahibini_getir( ).
+  o_hesap->yatirilanpara( EXPORTING i_para = 225 IMPORTING e_para = miktar ).
+  WRITE : / ' Para Yatırma İşlemi ', hesapsahibi, ' Toplamında ', miktar EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+  SKIP.
+
+   o_hesap->paracekmek( EXPORTING i_para = 225 i_ihbar_suresı_ıcınde = 'H' IMPORTING e_para = miktar  ).
+  WRITE: / ' Para Çekme işlemi ', hesapsahibi, ' Toplamında ', miktar EXPONENT 0 DECIMALS 2 LEFT-JUSTIFIED.
+  SKIP.
+  ULINE.
+
+  ENDLOOP.
